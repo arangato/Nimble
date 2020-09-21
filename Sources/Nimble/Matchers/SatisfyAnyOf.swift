@@ -4,14 +4,6 @@ public func satisfyAnyOf<T>(_ predicates: Predicate<T>...) -> Predicate<T> {
     return satisfyAnyOf(predicates)
 }
 
-/// A Nimble matcher that succeeds when the actual value matches with any of the matchers
-/// provided in the variable list of matchers. 
-@available(*, deprecated, message: "Use Predicate instead")
-public func satisfyAnyOf<T, U>(_ matchers: U...) -> Predicate<T>
-    where U: Matcher, U.ValueType == T {
-        return satisfyAnyOf(matchers.map { $0.predicate })
-}
-
 internal func satisfyAnyOf<T>(_ predicates: [Predicate<T>]) -> Predicate<T> {
         return Predicate.define { actualExpression in
             var postfixMessages = [String]()
@@ -42,16 +34,6 @@ internal func satisfyAnyOf<T>(_ predicates: [Predicate<T>]) -> Predicate<T> {
 
 public func || <T>(left: Predicate<T>, right: Predicate<T>) -> Predicate<T> {
         return satisfyAnyOf(left, right)
-}
-
-@available(*, deprecated, message: "Use Predicate instead")
-public func || <T>(left: NonNilMatcherFunc<T>, right: NonNilMatcherFunc<T>) -> Predicate<T> {
-    return satisfyAnyOf(left, right)
-}
-
-@available(*, deprecated, message: "Use Predicate instead")
-public func || <T>(left: MatcherFunc<T>, right: MatcherFunc<T>) -> Predicate<T> {
-    return satisfyAnyOf(left, right)
 }
 
 #if canImport(Darwin)
