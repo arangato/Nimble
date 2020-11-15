@@ -12,7 +12,8 @@ public func equal<T: Equatable>(_ expectedValue: T?) -> Predicate<T> {
             return PredicateResult(status: .fail, message: msg)
         case (let expected?, let actual?):
             let matches = expected == actual
-            return PredicateResult(bool: matches, message: msg)
+            return matches ? PredicateResult(bool: matches, message: msg) :
+                PredicateResult(bool: matches, message: .fail(diff(expected, actual).joined(separator: "\n")))
         }
     }
 }
@@ -28,7 +29,8 @@ public func equal<T: Equatable>(_ expectedValue: [T?]) -> Predicate<[T?]> {
         }
 
         let matches = expectedValue == actualValue
-        return PredicateResult(bool: matches, message: msg)
+        return matches ? PredicateResult(bool: matches, message: msg) :
+            PredicateResult(bool: matches, message: .fail(diff(expectedValue, actualValue).joined(separator: "\n")))
     }
 }
 
@@ -50,47 +52,21 @@ public func equal<T: Comparable>(_ expectedValue: Set<T>?) -> Predicate<Set<T>> 
 
 private func equal<T>(_ expectedValue: Set<T>?, stringify: @escaping (Set<T>?) -> String) -> Predicate<Set<T>> {
     return Predicate { actualExpression in
-        var errorMessage: ExpectationMessage =
-            .expectedActualValueTo("equal <\(stringify(expectedValue))>")
-
-        guard let expectedValue = expectedValue else {
-            return PredicateResult(
-                status: .fail,
-                message: errorMessage.appendedBeNilHint()
-            )
-        }
-
-        guard let actualValue = try actualExpression.evaluate() else {
-            return PredicateResult(
-                status: .fail,
-                message: errorMessage.appendedBeNilHint()
-            )
-        }
-
-        errorMessage = .expectedCustomValueTo(
-            "equal <\(stringify(expectedValue))>",
-            actual: "<\(stringify(actualValue))>"
-        )
+        let actualValue = try actualExpression.evaluate()
 
         if expectedValue == actualValue {
             return PredicateResult(
                 status: .matches,
-                message: errorMessage
+                message: .expectedCustomValueTo(
+                    "equal <\(stringify(expectedValue))>",
+                    actual: "<\(stringify(actualValue))>"
+                )
             )
         }
 
-        let missing = expectedValue.subtracting(actualValue)
-        if missing.count > 0 {
-            errorMessage = errorMessage.appended(message: ", missing <\(stringify(missing))>")
-        }
-
-        let extra = actualValue.subtracting(expectedValue)
-        if extra.count > 0 {
-            errorMessage = errorMessage.appended(message: ", extra <\(stringify(extra))>")
-        }
         return  PredicateResult(
             status: .doesNotMatch,
-            message: errorMessage
+            message: .fail(diff(expectedValue, actualValue).joined(separator: "\n"))
         )
     }
 }
